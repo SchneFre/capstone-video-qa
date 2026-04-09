@@ -1,7 +1,6 @@
 import os
 import subprocess
 import tempfile
-from tracemalloc import start
 import streamlit as st
 import whisper
 from dotenv import load_dotenv
@@ -11,7 +10,6 @@ from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
-# from faster_whisper import WhisperModel
 from pinecone import Pinecone, ServerlessSpec
 
 
@@ -34,50 +32,66 @@ PINECONE_ENV = "us-east-1"
 
 st.set_page_config(page_title="Video Q&A", layout="wide")
 
-st.title("🎬 Video Q&A with AI")
-st.write("Upload a video and ask questions using text or your microphone.")
 
 # ==========================
-# Sidebar navigation
+# SIDEBAR NAVIGATION
 # ==========================
+
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Chatbot", "Architecture"])
+
+page = st.sidebar.radio(
+    "Go to",
+    ["Chatbot", "Architecture"]
+)
+
 
 # ==========================
-# Architecture Page
+# ARCHITECTURE PAGE
 # ==========================
+
 if page == "Architecture":
+
     st.title("System Architecture")
-    col1, col2 = st.columns([2, 1])
+
+    st.subheader("Core Architecture Diagram")
+
+    col1, col2 = st.columns([2, 1])  # adjust ratio as needed
+
     with col1:
         st.image("architecture.png", width=1000)
+
     with col2:
         st.subheader("Process Flow")
         st.markdown("""
         **Pipeline:**
+
         1. User uploads video  
         2. Video → Audio (FFmpeg)  
         3. Audio → Text (Whisper)  
         4. Text → Chunks (LangChain)  
         5. Chunks → Embeddings (OpenAI)  
-        6. Stored in Pinecone (namespace = video filename)  
+        6. Stored in Pinecone  
         7. User asks question  
         8. Retriever finds relevant chunks  
         9. LLM generates answer  
         """)
+
     st.stop()
 
+
 # ==========================
-# Chatbot Page
+# CHATBOT PAGE
 # ==========================
+
 st.title("Video Q&A with AI")
 st.write("Upload a video and ask questions using text or your microphone.")
+
 
 # ==========================
 # Load Whisper model
 # ==========================
 
-model = whisper.load_model("tiny.en")  # change to "base", "small", "medium", "large-v2" if needed
+model = whisper.load_model("tiny.en")
 
 
 # ==========================
@@ -87,24 +101,6 @@ model = whisper.load_model("tiny.en")  # change to "base", "small", "medium", "l
 def log_time(step_name, start_time):
     elapsed = time.time() - start_time
     st.write(f"{step_name}: {elapsed:.2f} sec")
-
-
-def split_audio(audio_path, chunk_length=30):
-    output_dir = "chunks"
-    os.makedirs(output_dir, exist_ok=True)
-
-    command = [
-        "ffmpeg",
-        "-i", audio_path,
-        "-f", "segment",
-        "-segment_time", str(chunk_length),
-        "-c", "copy",
-        f"{output_dir}/chunk_%03d.wav"
-    ]
-
-    subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    return sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir)])
 
 
 def convert_video_to_audio(video_path, audio_path, ffmpeg_dir=r"C:\FFmpeg\ffmpeg-8.0.1-essentials_build\bin"):
@@ -123,13 +119,9 @@ def convert_video_to_audio(video_path, audio_path, ffmpeg_dir=r"C:\FFmpeg\ffmpeg
 
 
 def transcribe_audio(audio_file):
-    
-    # model = whisper.load_model("tiny.en")
-
     result = model.transcribe(audio_file)
-   
     return result["text"]
-    
+
 
 def create_vector_store(chunks):
 
@@ -146,10 +138,9 @@ def create_vector_store(chunks):
                 region=PINECONE_ENV
             )
         )
-    
+
     index = pc.Index(INDEX_NAME)
     
-    # clear previous video vectors
     index.delete(delete_all=True)
 
     embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
@@ -167,12 +158,13 @@ def create_vector_store(chunks):
 
 def build_qa_chain(vector_db):
 
-    retriever = vector_db.as_retriever(search_type="similarity")
+    retriever = vector_db.as_retriever(search_kwargs={"k": 2})
 
     qa_chain = RetrievalQA.from_chain_type(
         llm=ChatOpenAI(
             model_name="gpt-3.5-turbo",
-            openai_api_key=OPENAI_API_KEY
+            openai_api_key=OPENAI_API_KEY,
+            temperature=0
         ),
         chain_type="stuff",
         retriever=retriever
@@ -180,10 +172,19 @@ def build_qa_chain(vector_db):
 
     return qa_chain
 
-def summarize_video(qa_chain, transcript):
-    prompt = f"Summarize the following video content in a concise paragraph:\n\n{transcript}"
-    summary = qa_chain.run(prompt)
-    return summary
+
+def summarize_video(transcript):
+
+    llm = ChatOpenAI(
+        model_name="gpt-3.5-turbo",
+        openai_api_key=OPENAI_API_KEY,
+        temperature=0
+    )
+
+    short_text = transcript[:4000]
+
+    return llm.predict(f"Summarize this video:\n\n{short_text}")
+
 
 # ==========================
 # Upload video
@@ -196,22 +197,18 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
 
-    # Detect if a new video was uploaded
     if "current_video" not in st.session_state:
         st.session_state.current_video = None
 
     if uploaded_file.name != st.session_state.current_video:
 
-        # Reset session state
         st.session_state.current_video = uploaded_file.name
         st.session_state.processed = False
         st.session_state.chat_history = []
         st.session_state.qa_chain = None
 
-        # Force full refresh so old chat disappears
         st.rerun()
-        
-    # Run processing if not yet processed
+
     if not st.session_state.get("processed", False):
 
         with st.spinner("Processing video..."):
@@ -222,37 +219,29 @@ if uploaded_file:
             video_path = temp_video.name
             audio_path = video_path + ".wav"
 
-            # Extract audio
             convert_video_to_audio(video_path, audio_path)
 
-            # Transcribe 
-            start = time.time()
+            # start = time.time()
             transcript = transcribe_audio(audio_path)
-            log_time("transcribe_audio", start) 
+            # log_time("Transcription", start)
 
             st.success("Transcription complete")
 
-            # Split transcript
             splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=150
+                chunk_size=800,
+                chunk_overlap=100
             )
 
             chunks = splitter.split_text(transcript)
 
-            # Create vector DB
-            start = time.time()
             vector_db = create_vector_store(chunks)
-            log_time("vector_db", start) 
 
-            # Build QA chain
             qa_chain = build_qa_chain(vector_db)
 
             st.session_state.qa_chain = qa_chain
             st.session_state.processed = True
 
-            # Generate summary immediately           
-            summary = summarize_video(qa_chain, transcript)
+            summary = summarize_video(transcript)
             st.session_state.video_summary = summary
 
             st.success("Video ready for questions!")
@@ -261,10 +250,12 @@ if uploaded_file:
 # ==========================
 # Display summary
 # ==========================
+
 if st.session_state.get("video_summary", None):
     st.divider()
-    st.subheader("📄 Video Summary")
+    st.subheader("Video Summary")
     st.write(st.session_state.video_summary)
+
 
 # ==========================
 # Chat Interface
@@ -329,6 +320,31 @@ if st.session_state.get("processed", False):
     # --------------------------
     # Display chat history
     # --------------------------
+
+    for role, message in st.session_state.chat_history:
+        if role == "user":
+            st.chat_message("user").write(message)
+        else:
+            st.chat_message("assistant").write(message)
+
+
+    st.divider()
+    st.subheader("Ask Questions About the Video")
+
+    qa_chain = st.session_state.qa_chain
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # user_text = st.chat_input("Type your question here...")
+
+    if user_text:
+
+        with st.spinner("Getting answer..."):
+            answer = qa_chain.run(user_text)
+
+        st.session_state.chat_history.append(("user", user_text))
+        st.session_state.chat_history.append(("assistant", answer))
 
     for role, message in st.session_state.chat_history:
         if role == "user":
