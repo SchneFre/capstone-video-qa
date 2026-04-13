@@ -60,7 +60,7 @@ if page == "Architecture":
         3. Audio → Text (Whisper)  
         4. Text → Chunks (LangChain)  
         5. Chunks → Embeddings (OpenAI)  
-        6. Stored in Pinecone (namespace = video filename)  
+        6. Stored in Pinecone 
         7. User asks question  
         8. Retriever finds relevant chunks  
         9. LLM generates answer  
@@ -70,14 +70,14 @@ if page == "Architecture":
 # ==========================
 # Chatbot Page
 # ==========================
-st.title("Video Q&A with AI")
+st.title("Chatbot")
 st.write("Upload a video and ask questions using text or your microphone.")
 
 # ==========================
 # Load Whisper model
 # ==========================
 
-model = whisper.load_model("tiny.en")  # change to "base", "small", "medium", "large-v2" if needed
+model = whisper.load_model("base")  # change to "tiny.en", "base", "small", "medium", "large-v2" if needed
 
 
 # ==========================
@@ -226,9 +226,9 @@ if uploaded_file:
             convert_video_to_audio(video_path, audio_path)
 
             # Transcribe 
-            start = time.time()
+            # start = time.time()
             transcript = transcribe_audio(audio_path)
-            log_time("transcribe_audio", start) 
+            # log_time("transcribe_audio", start) 
 
             st.success("Transcription complete")
 
@@ -241,9 +241,9 @@ if uploaded_file:
             chunks = splitter.split_text(transcript)
 
             # Create vector DB
-            start = time.time()
+            # start = time.time()
             vector_db = create_vector_store(chunks)
-            log_time("vector_db", start) 
+            # log_time("vector_db", start) 
 
             # Build QA chain
             qa_chain = build_qa_chain(vector_db)
