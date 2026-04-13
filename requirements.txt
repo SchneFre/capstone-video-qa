@@ -1,0 +1,12 @@
+streamlit
+openai
+openai-whisper
+torch
+python-dotenv
+langchain
+langchain-community
+langchain-openai
+langchain-pinecone
+pinecone
+tiktoken
+ffmpeg-python
