@@ -1,25 +1,25 @@
-# 🎬 Video Q&A with AI (Streamlit + Whisper + LangChain + Pinecone)
+# Video Q&A with AI (Streamlit + Whisper + LangChain + Pinecone)
 
 An AI-powered application that lets you **upload videos and ask questions about their content** using either text or voice.  
 The system transcribes video audio, creates embeddings, stores them in a vector database, and uses an LLM to answer questions intelligently.
 
 ---
 
-## 🚀 Features
+## Features
 
-- 🎥 Upload video files (`mp4`, `mov`, `mkv`)
-- 🎙️ Automatic speech-to-text using OpenAI Whisper
-- ✂️ Transcript chunking with LangChain
-- 🧠 Embeddings with OpenAI
-- 📦 Vector storage using Pinecone
-- 💬 Conversational Q&A with GPT-3.5
-- 🎤 Ask questions via microphone or text input
-- 📄 Auto-generated video summary
-- 🧩 Clean Streamlit UI with architecture view
+- Upload video files (`mp4`, `mov`, `mkv`)
+- Automatic speech-to-text using OpenAI Whisper
+- Transcript chunking with LangChain
+- Embeddings with OpenAI
+- Vector storage using Pinecone
+- Conversational Q&A with GPT-3.5
+- Ask questions via microphone or text input
+- Auto-generated video summary
+- Clean Streamlit UI with architecture view
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 1. User uploads video  
 2. FFmpeg extracts audio  
@@ -33,7 +33,7 @@ The system transcribes video audio, creates embeddings, stores them in a vector 
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 - **Frontend:** Streamlit  
 - **Speech-to-Text:** OpenAI Whisper  
