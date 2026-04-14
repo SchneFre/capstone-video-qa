@@ -14,6 +14,8 @@ from langchain_pinecone import PineconeVectorStore
 # from faster_whisper import WhisperModel
 from pinecone import Pinecone, ServerlessSpec
 
+from evaluation import print_results, run_full_evaluation
+
 
 # ==========================
 # Load environment variables
@@ -249,6 +251,7 @@ if uploaded_file:
             qa_chain = build_qa_chain(vector_db)
 
             st.session_state.qa_chain = qa_chain
+            st.session_state.vector_db = vector_db  
             st.session_state.processed = True
 
             # Generate summary immediately           
@@ -266,11 +269,12 @@ if st.session_state.get("video_summary", None):
     st.subheader("📄 Video Summary")
     st.write(st.session_state.video_summary)
 
+
 # ==========================
 # Chat Interface
 # ==========================
 if st.session_state.get("processed", False):
-
+   
     st.divider()
     st.subheader("💬 Ask Questions About the Video")
 
@@ -335,3 +339,25 @@ if st.session_state.get("processed", False):
             st.chat_message("user").write(message)
         else:
             st.chat_message("assistant").write(message)
+    
+    # st.divider()
+    # st.subheader("📊 Evaluation")
+
+    # if st.button("Run Evaluation"):
+    #     with st.spinner("Evaluating system..."):
+    #         results = run_full_evaluation(
+    #             st.session_state.qa_chain,
+    #             st.session_state.vector_db,   
+    #             OPENAI_API_KEY
+    #         )
+    #         print_results(results)
+
+    #     st.success("Evaluation complete!")
+
+    #     for r in results:
+    #         st.write("### Question:", r["question"])
+    #         st.write("**Prediction:**", r["prediction"])
+    #         st.write("**Ground Truth:**", r["ground_truth"])
+    #         st.write("**Retrieved Chunks:**", r["retrieved_docs"])
+    #         st.write("**Evaluation:**", r["evaluation"])
+    #         st.divider()
