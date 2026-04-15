@@ -69,6 +69,7 @@ def inspect_retrieval(vector_db, question):
     end_mem = get_memory_mb()
     mem_used = end_mem - start_mem
     return [doc.page_content for doc in docs], latency, mem_used
+
 def print_results(results):
     for r in results:
         print("\n==============================")

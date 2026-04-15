@@ -13,6 +13,8 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 # from faster_whisper import WhisperModel
 from pinecone import Pinecone, ServerlessSpec
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
 
 from evaluation import print_results, run_full_evaluation
 
@@ -169,15 +171,18 @@ def create_vector_store(chunks):
 
 def build_qa_chain(vector_db):
 
-    retriever = vector_db.as_retriever(search_type="similarity")
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        return_messages=True
+    )
 
-    qa_chain = RetrievalQA.from_chain_type(
+    qa_chain = ConversationalRetrievalChain.from_llm(
         llm=ChatOpenAI(
             model_name="gpt-3.5-turbo",
             openai_api_key=OPENAI_API_KEY
         ),
-        chain_type="stuff",
-        retriever=retriever
+        retriever=vector_db.as_retriever(search_type="similarity"),
+        memory=memory
     )
 
     return qa_chain
@@ -325,8 +330,9 @@ if st.session_state.get("processed", False):
 
     if user_question:
         with st.spinner("Getting answer..."):
-            answer = qa_chain.run(user_question)
-
+            # answer = qa_chain.run(user_question)
+            result = qa_chain({"question": user_question})
+            answer = result["answer"]
         st.session_state.chat_history.append(("user", user_question))
         st.session_state.chat_history.append(("assistant", answer))
 
