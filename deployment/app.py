@@ -345,6 +345,10 @@ if st.session_state.get("processed", False):
             st.chat_message("user").write(message)
         else:
             st.chat_message("assistant").write(message)
+
+    # --------------------------
+    # Evaluation 
+    # --------------------------
     
     # st.divider()
     # st.subheader("📊 Evaluation")
