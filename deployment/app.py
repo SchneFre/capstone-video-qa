@@ -181,7 +181,7 @@ def build_qa_chain(vector_db):
             model_name="gpt-3.5-turbo",
             openai_api_key=OPENAI_API_KEY
         ),
-        retriever=vector_db.as_retriever(search_type="similarity"),
+        retriever=vector_db.as_retriever(search_type="similarity", k=3),
         memory=memory
     )
 
