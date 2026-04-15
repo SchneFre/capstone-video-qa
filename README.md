@@ -47,6 +47,7 @@ The system transcribes video audio, creates embeddings, stores them in a vector 
 ## Test 
 - streamlit run .\deployment\app.py
 - .env file is required for OPENAI_API_KEY & PINECONE_API_KEY
+- FFmpeg has to be installed: C:\FFmpeg\ffmpeg-8.0.1-essentials_build\bin
 
 ---
 ## Presentation:
