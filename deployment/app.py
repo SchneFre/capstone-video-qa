@@ -188,9 +188,7 @@ def build_qa_chain(vector_db):
     return qa_chain
 
 def summarize_video(qa_chain, transcript):
-    # prompt = f"Summarize the following video content in a concise paragraph:\n\n{transcript}"
-    # summary = qa_chain.run(prompt)
-
+    
     llm = ChatOpenAI(
         model_name="gpt-3.5-turbo",
         openai_api_key=OPENAI_API_KEY
@@ -199,7 +197,7 @@ def summarize_video(qa_chain, transcript):
     prompt = f"Summarize the following video content in a concise paragraph:\n\n{transcript}"
     
     response = llm.predict(prompt)
-    # return summary
+   
     return response
 
 # ==========================
